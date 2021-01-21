@@ -157,13 +157,10 @@ int main()
 	glEnableVertexAttribArray(0);
 
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); //陷阱：VAO会存储element的bind事件
+	glBindVertexArray(0);
 	//glVertexAttribPointer()函数执行完成后，可安全解绑顶点缓冲对象
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	//glBindVertexArray(0);
-
-	//启动线框模式
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //启动完全绘制模型
 
 	//保持程序的运行，直至用户请求退出
 	while (!glfwWindowShouldClose(window))
@@ -177,6 +174,9 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		//清屏
 		glClear(GL_COLOR_BUFFER_BIT);
+		//启动线框模式
+		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //启动完全绘制模型
 		//使用先前链接完成的着色器程序
 		glUseProgram(shaderProgram);
 		//绑定顶点数组对象
