@@ -1,27 +1,10 @@
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
+#include "Shader.h"
 #include <iostream>
 
 void frameBufferSizeCallback(GLFWwindow*, int, int);
 void processInput(GLFWwindow* window);
-
-//顶点着色器
-const char* VERTEX_SHADER_SOURCE =
-"#version 330 core\n"
-"layout (location = 0) in vec3 aPos;\n"
-"void main()\n"
-"{\n"
-"gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-"}\n";
-
-//片段着色器
-const char* FRAGMENT_SHADER_SOURCE =
-"#version 330 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{\n"
-"FragColor = vec4(1.0, 1.0, 1.0, 1.0);\n"
-"}\n";
 
 int main()
 {
@@ -57,78 +40,18 @@ int main()
 	//注册窗口尺寸变化监听
 	glfwSetFramebufferSizeCallback(window, frameBufferSizeCallback);
 
-	int success = 0;
-	char infoLog[512] = { '\0' };
-
-	GLuint vertexShader, fragmentShader, shaderProgram;
-	//创建顶点着色器
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	//绑定顶点着色器源码
-	glShaderSource(vertexShader, 1, &VERTEX_SHADER_SOURCE, NULL);
-	//编译顶点着色器
-	glCompileShader(vertexShader);
-
-	//获取顶点着色器编译结果
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		//如果编译失败，则输出错误信息
-		glGetShaderInfoLog(vertexShader, sizeof(infoLog), NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILE_FAILED\n" << infoLog << std::endl;
-	}
-
-	//创建片段着色器
-	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	//绑定片段着色器源码
-	glShaderSource(fragmentShader, 1, &FRAGMENT_SHADER_SOURCE, NULL);
-	//编译片段着色器
-	glCompileShader(fragmentShader);
-	//获取片段着色器编译结果
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(fragmentShader, sizeof(infoLog), NULL, infoLog);
-		std::cout << "ERROR::SHADER::FRAGMENT::COMPILE_FAILED\n" << infoLog << std::endl;
-	}
-
-	//创建着色器程序
-	shaderProgram = glCreateProgram();
-	//将顶点着色器添加至着色器程序
-	glAttachShader(shaderProgram, vertexShader);
-	//将片段着色器添加至着色器程序
-	glAttachShader(shaderProgram, fragmentShader);
-	//将着色器链接
-	glLinkProgram(shaderProgram);
-	//获取链接结果
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success)
-	{
-		glGetProgramInfoLog(shaderProgram, sizeof(infoLog), NULL, infoLog);
-		std::cout << "ERROR::PROGRAM::LINK_FAILED\n" << infoLog << std::endl;
-	}
-	//着色器在着色器程序中链接成功后，可删除原有的着色器对象
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	//定义三角形定点数据
-	//float vertices[] = {
-	//	-0.5f,-0.5f,0f,
-	//	0.5f,-0.5f,0f,
-	//	0.0f,0.5f,0f
-	//};
+	Shader shader("./shader.vs", "./shader.fs");
 
 	//定义顶点原始数据
 	float vertices[] = {
-		-0.5f, 0.5f, 0,
-		0.5f, 0.5f, 0,
-		0.5f, -0.5f, 0,
-		-0.5f, -0.5f, 0,
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f	
 	};
 
 	//定义索引源氏数据
 	unsigned int indices[] = {
-		0, 1, 3,
-		1, 2, 3,
+		0, 1, 2,
 	};
 
 	GLuint VAO, VB0, EBO;
@@ -152,9 +75,12 @@ int main()
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//告诉Opengl如何解析顶点数据，并链接顶点数据到顶点属性上（location = 0）
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), NULL);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	//激活location = 0的顶点属性
 	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); //陷阱：VAO会存储element的bind事件
 	glBindVertexArray(0);
@@ -175,15 +101,17 @@ int main()
 		//清屏
 		glClear(GL_COLOR_BUFFER_BIT);
 		//启动线框模式
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //启动完全绘制模型
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //启动完全绘制模型
 		//使用先前链接完成的着色器程序
-		glUseProgram(shaderProgram);
+		shader.Use();
+		float movePos = cos((float)glfwGetTime());
+		shader.SetFloat("offset", movePos * 0.5f);
 		//绑定顶点数组对象
 		glBindVertexArray(VAO);
 		//glDrawArrays(GL_TRIANGLES, 0, 3);
 		//画矩形
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]), GL_UNSIGNED_INT, 0);
 
 		//交换颜色缓冲
 		glfwSwapBuffers(window);
@@ -197,8 +125,6 @@ int main()
 	glDeleteBuffers(1, &VB0);
 	//移除顶点数组对象
 	glDeleteVertexArrays(1, &VAO);
-	//移除着色器程序
-	glDeleteProgram(shaderProgram);
 
 	glfwTerminate();
 
@@ -211,7 +137,7 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow * window)
+void processInput(GLFWwindow* window)
 {
 	//检测ESC按键是否被按下
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
