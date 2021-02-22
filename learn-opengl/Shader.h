@@ -16,7 +16,6 @@ public:
 	void Use();
 
 	inline GLuint GetId() { return id; }
-	inline void SetId(GLuint id) { this->id = id; }
 
 	void SetBool(const std::string& name, bool value) const;
 	void SetInt(const std::string& name, int value) const;
