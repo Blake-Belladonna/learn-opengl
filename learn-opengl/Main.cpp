@@ -3,6 +3,9 @@
 #include "stb_image.h"
 #include "Shader.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <glad/glad.h>
 #include <glfw/glfw3.h>
 #include <iostream>
@@ -111,7 +114,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	//如果选用GL_CLAMP_TO_BORDER环绕方式，请额外设置环绕颜色
-	//float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
+	//const float borderColor[] = { 1.0f, 1.0f, 0.0f, 1.0f };
 	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	//告诉stb_image.h加载图像时将图像Y轴进行翻转
@@ -141,6 +144,7 @@ int main()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 
 	imageData = stbi_load("awesomeface.png", &imageWidth, &imageHeight, &imageChannels, 0);
 	if (imageData)
@@ -157,8 +161,8 @@ int main()
 
 	shader.Use();
 	//关联采样器与纹理单元
-	shader.SetInt("texture0", 0);
-	shader.SetInt("texture1", 1);
+	shader.SetInt("texture0", GL_TEXTURE0 - GL_TEXTURE0);
+	shader.SetInt("texture1", GL_TEXTURE1 - GL_TEXTURE0);
 
 	//保持程序的运行，直至用户请求退出
 	while (!glfwWindowShouldClose(window))
@@ -187,9 +191,29 @@ int main()
 		shader.Use();
 		//绑定顶点数组对象
 		glBindVertexArray(VAO);
+
+		//创建4*4单位矩阵
+		glm::mat4 trans = glm::mat4(1.0f);
+		//逆序变换位移
+		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+		//逆序变换旋转
+		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+		//逆序变换缩放
+		trans = glm::scale(trans, glm::vec3(0.6f, 0.6f, 0.6f));
+		//传输矩阵数据至着色器(顶点)
+		shader.SetMatrix4("trans", glm::value_ptr(trans));
+
 		//glDrawArrays(GL_TRIANGLES, 0, 3);
 		//画矩形
-		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]), GL_UNSIGNED_INT, 0);
+		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]), GL_UNSIGNED_INT, NULL);
+
+		glm::mat4 trans2 = glm::mat4(1.0f);
+		trans2 = glm::translate(trans2, glm::vec3(-0.5f, 0.5f, 0.0f));
+		float scale = (float)((cos(glfwGetTime())) * 3.0f + 3.0f) * 0.1f;
+		trans2 = glm::scale(trans2, glm::vec3(scale, scale, scale));
+		shader.SetMatrix4("trans", glm::value_ptr(trans2));
+
+		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]), GL_UNSIGNED_INT, NULL);
 
 		//交换颜色缓冲
 		glfwSwapBuffers(window);

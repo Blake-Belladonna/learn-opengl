@@ -99,3 +99,8 @@ void Shader::SetFloat(const std::string& name, float value) const
 	glUniform1f(i, value);
 }
 
+void Shader::SetMatrix4(const std::string& name,  float const* const& value) const
+{
+	GLint i = glGetUniformLocation(id, name.c_str());
+	glUniformMatrix4fv(i, 1, GL_FALSE, value);
+}
