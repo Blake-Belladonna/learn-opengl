@@ -1,4 +1,6 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define SCREEN_WIDTH 800.0f
+#define SCREEN_HEIGHT 800.0f
 
 #include "stb_image.h"
 #include "Shader.h"
@@ -24,7 +26,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	//创建窗口对象
-	GLFWwindow* window = glfwCreateWindow(800, 800, "OpenGL", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow((int)SCREEN_WIDTH, (int)SCREEN_HEIGHT, "OpenGL", NULL, NULL);
 	if (!window)
 	{
 		std::cout << "failed to create GLFW window." << std::endl;
@@ -51,19 +53,50 @@ int main()
 
 	//定义顶点原始数据
 	float vertices[] = {
-		0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-		-0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0, 0.0f
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	};
 
-	//定义索引原始数据
-	unsigned int indices[] = {
-		0, 1, 2,
-		0, 2, 3
-	};
-
-	GLuint VAO, VB0, EBO;
+	GLuint VAO, VB0;
 	//创建顶点数组对象
 	glGenVertexArrays(1, &VAO);
 	//绑定顶点数组对象
@@ -76,29 +109,19 @@ int main()
 	//将原始顶点数据拷贝至显存中
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	//创建索引缓冲对象
-	glGenBuffers(1, &EBO);
-	//绑定索引缓冲对象
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//将原始索引数据拷贝至显存中
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
 	//告诉Opengl如何解析顶点数据，并链接顶点数据到顶点属性上（location = 0）
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	//激活location = 0的顶点属性
 	glEnableVertexAttribArray(0);
-	//配置顶点颜色指针
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
 	//配置纹理坐标指针
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
 
 	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); //陷阱：VAO会存储element的bind事件
 	glBindVertexArray(0);
 	//glVertexAttribPointer()函数执行完成后，可安全解绑顶点缓冲对象和索引缓冲对象
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	//glBindVertexArray(0);
 
 	//创建两个纹理对象
@@ -159,10 +182,24 @@ int main()
 	stbi_image_free(imageData);
 	glBindTexture(GL_TEXTURE_2D, 0);
 
+	glEnable(GL_DEPTH_TEST);
+
 	shader.Use();
-	//关联采样器与纹理单元
 	shader.SetInt("texture0", GL_TEXTURE0 - GL_TEXTURE0);
 	shader.SetInt("texture1", GL_TEXTURE1 - GL_TEXTURE0);
+
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
 
 	//保持程序的运行，直至用户请求退出
 	while (!glfwWindowShouldClose(window))
@@ -175,7 +212,7 @@ int main()
 		//设置清屏颜色
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		//清屏
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		//启动线框模式
 		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //启动完全绘制模型
@@ -192,28 +229,21 @@ int main()
 		//绑定顶点数组对象
 		glBindVertexArray(VAO);
 
-		//创建4*4单位矩阵
-		glm::mat4 trans = glm::mat4(1.0f);
-		//逆序变换位移
-		trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
-		//逆序变换旋转
-		trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-		//逆序变换缩放
-		trans = glm::scale(trans, glm::vec3(0.6f, 0.6f, 0.6f));
-		//传输矩阵数据至着色器(顶点)
-		shader.SetMatrix4("trans", glm::value_ptr(trans));
-
-		//glDrawArrays(GL_TRIANGLES, 0, 3);
-		//画矩形
-		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]), GL_UNSIGNED_INT, NULL);
-
-		glm::mat4 trans2 = glm::mat4(1.0f);
-		trans2 = glm::translate(trans2, glm::vec3(-0.5f, 0.5f, 0.0f));
-		float scale = (float)((cos(glfwGetTime())) * 3.0f + 3.0f) * 0.1f;
-		trans2 = glm::scale(trans2, glm::vec3(scale, scale, scale));
-		shader.SetMatrix4("trans", glm::value_ptr(trans2));
-
-		glDrawElements(GL_TRIANGLES, sizeof(indices) / sizeof(indices[0]), GL_UNSIGNED_INT, NULL);
+		size_t cubeCount = sizeof(cubePositions) / sizeof(cubePositions[0]);
+		for (size_t i = 0; i < cubeCount; i++)
+		{
+			glm::mat4 model = glm::mat4(1.0f);
+			glm::mat4 view = glm::mat4(1.0f);
+			glm::mat4 projection = glm::mat4(1.0f);
+			model = glm::translate(model, cubePositions[i]);
+			model = glm::rotate(model, (float)glfwGetTime() * glm::radians(-55.0f * (i + 1)), glm::vec3(0.5f, 1.0f, 0.0f));
+			view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+			projection = glm::perspective(45.0f, SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 1000.0f);
+			shader.SetMatrix4("model", glm::value_ptr(model));
+			shader.SetMatrix4("view", glm::value_ptr(view));
+			shader.SetMatrix4("projection", glm::value_ptr(projection));
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
 
 		//交换颜色缓冲
 		glfwSwapBuffers(window);
@@ -221,8 +251,6 @@ int main()
 		glfwPollEvents();
 	}
 
-	//移除索引缓冲对象
-	glDeleteBuffers(1, &EBO);
 	//移除顶点缓冲对象
 	glDeleteBuffers(1, &VB0);
 	//移除顶点数组对象

@@ -1,7 +1,6 @@
 #version 330 core
 
 out vec4 gl_Color;
-in vec4 v2fColor;
 in vec2 v2fCoord;
 
 uniform sampler2D texture0;  
