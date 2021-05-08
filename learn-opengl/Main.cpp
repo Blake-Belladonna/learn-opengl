@@ -4,6 +4,7 @@
 
 #include "stb_image.h"
 #include "Shader.h"
+#include "Camera.h"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -12,8 +13,12 @@
 #include <glfw/glfw3.h>
 #include <iostream>
 
+double lastTime = 0.0f;
+double deltaTime = 0.0f;
+Camera camera;
+
 void frameBufferSizeCallback(GLFWwindow*, int, int);
-void processInput(GLFWwindow* window);
+void processInput(GLFWwindow* window, Camera& camera);
 
 int main()
 {
@@ -201,11 +206,19 @@ int main()
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
 
+	camera.transform().position() = glm::vec3(0.0f, 0.0f, 3.0f);
+	camera.transform().up() = glm::vec3(0.0f, 1.0f, 0.0f);
+	camera.transform().forward() = glm::vec3(0.0f, 0.0f, -1.0f);
+
 	//保持程序的运行，直至用户请求退出
 	while (!glfwWindowShouldClose(window))
 	{
+		double currentTime = glfwGetTime();
+		deltaTime = currentTime - lastTime;
+		lastTime = currentTime;
+
 		//输入处理函数
-		processInput(window);
+		processInput(window, camera);
 
 		//渲染开始
 
@@ -213,8 +226,7 @@ int main()
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		//清屏
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//启动线框模式
-		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE); //启动线框模式
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); //启动完全绘制模型
 		//激活纹理单元 0
 		glActiveTexture(GL_TEXTURE0); //关联纹理单元与纹理对象
@@ -237,7 +249,8 @@ int main()
 			glm::mat4 projection = glm::mat4(1.0f);
 			model = glm::translate(model, cubePositions[i]);
 			model = glm::rotate(model, (float)glfwGetTime() * glm::radians(-55.0f * (i + 1)), glm::vec3(0.5f, 1.0f, 0.0f));
-			view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+			//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+			view = glm::lookAt(camera.transform().position(), camera.transform().position() + camera.transform().forward(), camera.transform().up());
 			projection = glm::perspective(45.0f, SCREEN_WIDTH / SCREEN_HEIGHT, 0.1f, 1000.0f);
 			shader.SetMatrix4("model", glm::value_ptr(model));
 			shader.SetMatrix4("view", glm::value_ptr(view));
@@ -267,12 +280,34 @@ void frameBufferSizeCallback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 }
 
-void processInput(GLFWwindow* window)
+void processInput(GLFWwindow* window, Camera& camera)
 {
+	float cameraMotionSpeed = 2.0f * (float)deltaTime;
+
 	//检测ESC按键是否被按下
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 	{
 		//通知窗口将被关闭
 		glfwSetWindowShouldClose(window, true);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	{
+		camera.transform().position() += camera.transform().forward() * cameraMotionSpeed;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+	{
+		camera.transform().position() -= camera.transform().forward() * cameraMotionSpeed;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+	{
+		camera.transform().position() += glm::normalize(glm::cross(camera.transform().up(), camera.transform().forward())) * cameraMotionSpeed;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+	{
+		camera.transform().position() -= glm::normalize(glm::cross(camera.transform().up(), camera.transform().forward())) * cameraMotionSpeed;
 	}
 }
